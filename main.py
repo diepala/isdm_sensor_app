@@ -1,23 +1,33 @@
 import kivy.app
 import kivy.uix.boxlayout
+import kivy.uix.gridlayout
 import kivy.uix.label
 import kivy.uix.button
-import kivy.properties
 from jnius import autoclass
 import threading
+from RyT import *
 
 
 class ISDMApp(kivy.app.App):
 
     def build(self):
+        self.box_layout = kivy.uix.boxlayout.BoxLayout(orientation='vertical')
         self.title_label = kivy.uix.label.Label(text='ISDM App!')
         self.bt_connect_button = kivy.uix.button.Button(text='Connect', on_release=self.connect_to_device)
         self.test_label = kivy.uix.label.Label(text='Nothing')
 
-        self.box_layout = kivy.uix.boxlayout.BoxLayout(orientation='vertical')
+       
         self.box_layout.add_widget(self.title_label)
         self.box_layout.add_widget(self.bt_connect_button)
         self.box_layout.add_widget(self.test_label)
+
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura S1'))
+        self.t1_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.t1_label)
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura S2'))
+        self.t2_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.t2_label)
+
         return self.box_layout
 
     def get_socket_stream(self, name):
@@ -57,6 +67,10 @@ class ISDMApp(kivy.app.App):
         while(True):
             data_string = reader.readLine()
             self.test_label.text = str(data_string)
+            data = [ int(d) for d in str(data_string).split('/')]
+
+            self.t1_label.text = '%.1f ºC'%(T_S1(2200.0/(1024.0/data[0] - 1)) - 273.15)
+            self.t2_label.text = '%.1f ºC'%(T_S2(2200.0/(1024.0/data[1] - 1)) - 273.15)
 
 if __name__=='__main__':
     isdm_app = ISDMApp()
