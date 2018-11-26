@@ -27,6 +27,9 @@ class ISDMApp(kivy.app.App):
         self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura S2'))
         self.t2_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.t2_label)
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Factor disipación S1'))
+        self.fd_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.fd_label)
 
         return self.box_layout
 
@@ -69,8 +72,16 @@ class ISDMApp(kivy.app.App):
             self.test_label.text = str(data_string)
             data = [ int(d) for d in str(data_string).split('/')]
 
-            self.t1_label.text = '%.1f ºC'%(T_S1(2200.0/(1024.0/data[0] - 1)) - 273.15)
-            self.t2_label.text = '%.1f ºC'%(T_S2(2200.0/(1024.0/data[1] - 1)) - 273.15)
+            # Temperaturas
+            t1 = T_S1(2200.0/(1024.0/data[0] - 1)) - 273.15
+            t2 = T_S2(2200.0/(1024.0/data[1] - 1)) - 273.15
+            self.t1_label.text = '%.1f ºC'%(t1)
+            self.t2_label.text = '%.1f ºC'%(t2)
+
+            # Factor disipacion
+            a = data[0]/1024.0
+            d = 1000*5.0**2*a*(1-a)/(2200.0*(t1 - t2))
+            self.fd_label.text = '%.1f mW/K'%(d)
 
 if __name__=='__main__':
     isdm_app = ISDMApp()
