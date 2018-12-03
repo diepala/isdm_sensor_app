@@ -30,3 +30,7 @@ def T_S1(R):
 def T_S2(R):
     '''T en función de R para S2'''
     return _T(R, 2200.0, 0.003354016, 0.000256985, 2.62013e-6, 6.38309e-8)
+
+def T_SHR(R):
+    '''T en función de R para el sensor de temperatura de HR'''
+    return _T(R, 10000.0, 0.00335401643468053, 0.000256523550896126, 2.60597012072052e-6, 6.32926126487455e-8)

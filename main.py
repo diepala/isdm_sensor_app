@@ -21,15 +21,26 @@ class ISDMApp(kivy.app.App):
         self.box_layout.add_widget(self.bt_connect_button)
         self.box_layout.add_widget(self.test_label)
 
+        # T S1
         self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura S1'))
         self.t1_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.t1_label)
+        # T S2
         self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura S2'))
         self.t2_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.t2_label)
+        # Factor disipacion S1
         self.box_layout.add_widget(kivy.uix.label.Label(text='Factor disipación S1'))
         self.fd_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.fd_label)
+        # HR
+        self.box_layout.add_widget(kivy.uix.label.Label(text='HR'))
+        self.HR_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.HR_label)
+        # Temp HR
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura sensor HR'))
+        self.temp_HR_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.temp_HR_label)
 
         return self.box_layout
 
@@ -82,6 +93,11 @@ class ISDMApp(kivy.app.App):
             a = data[0]/1024.0
             d = 1000*5.0**2*a*(1-a)/(2200.0*(t1 - t2))
             self.fd_label.text = '%.1f mW/K'%(d)
+
+            # HR y temperatura de HR
+            self.HR_label.text = '%.1f \ HR' % (36.0 - (data[2] - 4130)/3.0)
+            t_hr = T_SHR(10000.0/(1024.0/data[3] - 1)) - 273.15
+            self.temp_HR_label.text = '%.1f ºC' % (t_hr)
 
 if __name__=='__main__':
     isdm_app = ISDMApp()
