@@ -6,11 +6,24 @@ import kivy.uix.button
 from jnius import autoclass
 import threading
 from RyT import *
-
+from time import time
+import urllib, json
 
 class ISDMApp(kivy.app.App):
 
     def build(self):
+        # Presion a nivel del mar en hPa
+        self.presion_mar = 1023.00
+        # Intenta obtener la presion de internet
+        url = "http://api.openweathermap.org/data/2.5/weather?q=barcelona&appid=c66ec6dbfe41049ac33db9af8b980f7f"
+        try:
+            response = urllib.urlopen(url)
+            data = json.loads(response.read())
+            self.presion_mar = float(data['main']['pressure'])
+        except:
+            pass
+
+
         self.box_layout = kivy.uix.boxlayout.BoxLayout(orientation='vertical')
         self.title_label = kivy.uix.label.Label(text='ISDM App!')
         self.bt_connect_button = kivy.uix.button.Button(text='Connect', on_release=self.connect_to_device)
@@ -41,6 +54,18 @@ class ISDMApp(kivy.app.App):
         self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura sensor HR'))
         self.temp_HR_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.temp_HR_label)
+        # Temperatura sensor Pression
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Temperatura sensor Pression'))
+        self.temp_P_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.temp_P_label)
+        # Pression
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Pression atmosferica'))
+        self.P_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.P_label)
+        # Altura
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Altura'))
+        self.altura_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.altura_label)      
 
         return self.box_layout
 
@@ -75,6 +100,9 @@ class ISDMApp(kivy.app.App):
             self.test_label.text = 'Disconected'
 
     def get_data_loop(self):
+        data_file = open('/storage/emulated/0/datos_sensores'+str(int(time()))+'.csv', 'w')
+        data_file.write('Temperatura, Preesion (hPa), Altura (m)\n')
+
         InputStreamReader = autoclass('java.io.InputStreamReader')
         BufferedReader = autoclass('java.io.BufferedReader')
         reader = BufferedReader(InputStreamReader(self.recv_stream))
@@ -95,9 +123,17 @@ class ISDMApp(kivy.app.App):
             self.fd_label.text = '%.1f mW/K'%(d)
 
             # HR y temperatura de HR
-            self.HR_label.text = '%.1f \ HR' % (36.0 - (data[2] - 4130)/3.0)
+            self.HR_label.text = '%.1f %% HR' % (36.0 - (data[2] - 4130)/3.0)
             t_hr = T_SHR(10000.0/(1024.0/data[3] - 1)) - 273.15
             self.temp_HR_label.text = '%.1f ºC' % (t_hr)
+
+            # Temperatura, pression y altura
+            self.temp_P_label.text = '%.1f ºC' % (data[4]/100.0)
+            self.P_label.text = '%.1f hPa' % (data[5]/100.0)
+            hP = 44330.0 * (1 - (data[5]/100.0/self.presion_mar)**(1.0/5.255))
+            self.altura_label.text = '%.1f m' % (hP)
+
+            data_file.write('%.4f,%.4f,%.4f\n' % (data[4]/100.0, data[5]/100.0, hP))
 
 if __name__=='__main__':
     isdm_app = ISDMApp()
