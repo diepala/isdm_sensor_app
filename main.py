@@ -66,6 +66,10 @@ class ISDMApp(kivy.app.App):
         self.box_layout.add_widget(kivy.uix.label.Label(text='Altura'))
         self.altura_label = kivy.uix.label.Label()
         self.box_layout.add_widget(self.altura_label)      
+        # Velocidad
+        self.box_layout.add_widget(kivy.uix.label.Label(text='Velocidad aire'))
+        self.vel_label = kivy.uix.label.Label()
+        self.box_layout.add_widget(self.vel_label)
 
         return self.box_layout
 
@@ -101,29 +105,34 @@ class ISDMApp(kivy.app.App):
 
     def get_data_loop(self):
         data_file = open('/storage/emulated/0/datos_sensores'+str(int(time()))+'.csv', 'w')
-        data_file.write('Temperatura, Preesion (hPa), Altura (m)\n')
+        data_file.write('Temperatura S1 (ºC), Temperatura S2 (ºC), Factor disipacion (mW/K), Humedad (%%HR), Temperatura sensor HR (ºC), Temperatura sensor pression (ºC), Pression (hPa), Altura (m), Velocidad viento (m/s)\n')
 
         InputStreamReader = autoclass('java.io.InputStreamReader')
         BufferedReader = autoclass('java.io.BufferedReader')
         reader = BufferedReader(InputStreamReader(self.recv_stream))
+
+        v0 = 0
+        v1 = 0
+
         while(True):
             data_string = reader.readLine()
             self.test_label.text = str(data_string)
             data = [ int(d) for d in str(data_string).split('/')]
 
             # Temperaturas
-            t1 = T_S1(2200.0/(1024.0/data[0] - 1)) - 273.15
+            t1 = T_S1(140.0/(1024.0/data[0] - 1)) - 273.15
             t2 = T_S2(2200.0/(1024.0/data[1] - 1)) - 273.15
             self.t1_label.text = '%.1f ºC'%(t1)
             self.t2_label.text = '%.1f ºC'%(t2)
 
             # Factor disipacion
             a = data[0]/1024.0
-            d = 1000*5.0**2*a*(1-a)/(2200.0*(t1 - t2))
+            d = 1000.0*5.0**2*a*(1-a)/(140.0*(t1 - t2))
             self.fd_label.text = '%.1f mW/K'%(d)
 
             # HR y temperatura de HR
-            self.HR_label.text = '%.1f %% HR' % (36.0 - (data[2] - 4130)/3.0)
+            hr_medida = 36.0 - 19.0 - (data[2] - 4130)/3.0
+            self.HR_label.text = '%.1f %% HR' % (hr_medida)
             t_hr = T_SHR(10000.0/(1024.0/data[3] - 1)) - 273.15
             self.temp_HR_label.text = '%.1f ºC' % (t_hr)
 
@@ -133,7 +142,18 @@ class ISDMApp(kivy.app.App):
             hP = 44330.0 * (1 - (data[5]/100.0/self.presion_mar)**(1.0/5.255))
             self.altura_label.text = '%.1f m' % (hP)
 
-            data_file.write('%.4f,%.4f,%.4f\n' % (data[4]/100.0, data[5]/100.0, hP))
+
+            # Velocidad viento
+            d0 = 1.3
+            du = 0.488
+            vel = ((max(d - d0, 0))/du)**1.7
+            vel = (v0 + v1 + vel)/3.0
+            v0 = v1
+            v1 = vel
+            self.vel_label.text = '%.1f m/s' % (vel)
+
+            # Escribir a fichero
+            data_file.write('%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n' % (t1, t2, d, hr_medida, t_hr, data[4]/100.0, data[5]/100.0, hP, vel))
 
 if __name__=='__main__':
     isdm_app = ISDMApp()
